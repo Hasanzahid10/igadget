@@ -65,8 +65,16 @@ class ProductViewSet(viewsets.ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_value = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
 
-        if lookup_value.isdigit():
-            filter_kwargs = {'pk': int(lookup_value)}
+        is_uuid = False
+        try:
+            import uuid
+            uuid.UUID(str(lookup_value))
+            is_uuid = True
+        except (ValueError, AttributeError):
+            is_uuid = False
+
+        if is_uuid or (isinstance(lookup_value, str) and lookup_value.isdigit()):
+            filter_kwargs = {'pk': lookup_value}
         else:
             filter_kwargs = {'slug': lookup_value}
 

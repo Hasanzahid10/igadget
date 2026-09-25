@@ -6,6 +6,7 @@ from .models import Products, Brand, Category, ProductsImage
 #================================================
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.SerializerMethodField()
+    products_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -18,6 +19,9 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_subcategories(self, obj):
         subcategories = obj.subcategories.filter(is_active=True)
         return CategorySerializer(subcategories, many=True).data
+
+    def get_products_count(self, obj):
+        return obj.products.filter(is_active=True).count() if hasattr(obj, 'products') else 0
 
 
 #================================================

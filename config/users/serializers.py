@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import OTPVerification, Address
+from .models import OTPVerification, Address, UserActivity
 
 User = get_user_model()
 
@@ -38,12 +38,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             phone=validated_data.get('phone', ''),
             role=validated_data.get('role', getattr(User.Role, 'CUSTOMER', 'customer')),
-            is_active=False,  # Kept inactive until email OTP verification
+            is_active=True,  # Active for immediate authenticated checkout
         )
-        # Automatically generate registration OTP
-        otp = OTPVerification.generate_otp(user, 'register')
-        print(f"[DEBUG OTP] Registration for {user.email}:{otp.code}")
         return user
+
+
+# =======================================================
+# User Activity Serializer (Guest & Registered Tracking)
+# =======================================================
+class UserActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserActivity
+        fields = '__all__'
+
 
 
 # =======================================================
@@ -234,7 +241,6 @@ class AddressSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'user': {'read_only': True},
             'id': {'read_only': True},
-            'is_default': {'read_only': True},
         }
 
     def validate(self, attrs):

@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils.text import slugify
 
@@ -6,8 +7,11 @@ from django.utils.text import slugify
 #===================================================
 
 class Category(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    image = models.TextField(blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True, null=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
     is_active = models.BooleanField(default=True)
@@ -47,6 +51,7 @@ class Brand(models.Model):
 #======================================================================
 
 class Products(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
@@ -60,12 +65,22 @@ class Products(models.Model):
 
     category = models.ForeignKey(Category, on_delete=models.PROTECT, null=True, related_name='products')
     brand = models.ForeignKey(Brand, on_delete=models.PROTECT, null=True, related_name='products')
+    badge = models.CharField(max_length=100, blank=True, null=True)
+    storage_options = models.JSONField(default=list, blank=True)
+    colors = models.JSONField(default=list, blank=True)
+    specs = models.JSONField(default=list, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            base_slug = slugify(self.title) or 'product'
+            slug = base_slug
+            counter = 1
+            while Products.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
         # Calculate discount percentage 
         if self.price and self.discount_price and self.discount_price < self.price:
             discount = ((self.price - self.discount_price) / self.price) * 100
@@ -83,8 +98,9 @@ class Products(models.Model):
 # Products Image Model
 #===============================================
 class ProductsImage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='images')
-    images = models.URLField(null=True, blank=True)
+    images = models.TextField(null=True, blank=True)
     is_primary = models.BooleanField(default=False)
 
     def __str__(self):

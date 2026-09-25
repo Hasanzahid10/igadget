@@ -97,3 +97,38 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.address_line1}, {self.city}, {self.state}"
+
+
+#=============================================================
+#  User Activity Tracking (Guest & Registered Visitor Radar)
+#=============================================================
+class UserActivity(models.Model):
+    ACTION_CHOICES = (
+        ('view_product', 'Viewed Product'),
+        ('add_to_cart', 'Added to Cart'),
+        ('remove_from_cart', 'Removed from Cart'),
+        ('add_to_wishlist', 'Saved to Wishlist'),
+        ('remove_from_wishlist', 'Removed from Wishlist'),
+        ('checkout_start', 'Initiated Checkout'),
+        ('order_placed', 'Placed Order'),
+        ('search', 'Searched Products'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
+    session_id = models.CharField(max_length=255, blank=True, default='')
+    user_type = models.CharField(max_length=20, default='guest')  # 'guest' or 'registered'
+    user_identifier = models.CharField(max_length=255, default='Guest Visitor')
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    product_id = models.CharField(max_length=255, null=True, blank=True)
+    product_title = models.CharField(max_length=255, blank=True, default='')
+    product_image = models.TextField(blank=True, default='')
+    product_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user_identifier} - {self.action} - {self.product_title}"

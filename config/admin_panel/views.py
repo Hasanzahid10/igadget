@@ -61,7 +61,7 @@ class AdminOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAdminUserRole]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filter_class = OrderFilter
-    search_fields = ['order_numbre', 'phone_number', 'user__email']
+    search_fields = ['order_number', 'phone_number', 'user__email']
     ordering_fields = ['created_at','total_amount']
 
     @action(detail=True, methods=['post'])

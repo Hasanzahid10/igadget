@@ -22,7 +22,7 @@ class ProductFilter(django_filters.FilterSet):
 
     class Meta:
         model = Products
-        fields = '__all__'
+        fields = ['title', 'slug', 'category', 'brand', 'price', 'is_featured', 'is_deal_of_the_day', 'is_active']
 
 
 

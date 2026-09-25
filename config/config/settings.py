@@ -23,8 +23,8 @@ DEBUG = env('DEBUG')
 # Set domain access rules
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
-# CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=False)
+# CORS Configuration (Updated for dev ports 5173-5176)
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
 
 # Application definition
@@ -108,10 +108,72 @@ SIMPLE_JWT = {
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
 }
 
-# Database Configuration (Reads DATABASE_URL or defaults to SQLite)
-DATABASES = {
-    'default': env.db('DATABASE_URL', default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}")
-}
+import socket
+import subprocess
+
+def _is_postgres_available(host='localhost', port=5432):
+    for h in [host, '127.0.0.1']:
+        try:
+            with socket.create_connection((h, int(port)), timeout=0.5):
+                return True
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            pass
+    
+    data_dir = r"C:\my_install\pgsql\data"
+    postgres_bin = r"C:\my_install\pgsql\bin\postgres.exe"
+    pg_ctl_bin = r"C:\my_install\pgsql\bin\pg_ctl.exe"
+    if os.path.exists(postgres_bin) and os.path.exists(data_dir):
+        pid_file = os.path.join(data_dir, 'postmaster.pid')
+        status_res = subprocess.run([pg_ctl_bin, 'status', '-D', data_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if status_res.returncode != 0 and os.path.exists(pid_file):
+            try:
+                os.remove(pid_file)
+            except Exception:
+                pass
+        try:
+            subprocess.Popen([postgres_bin, "-D", data_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            import time
+            for _ in range(15):
+                for h in [host, '127.0.0.1']:
+                    try:
+                        with socket.create_connection((h, int(port)), timeout=0.3):
+                            return True
+                    except (socket.timeout, ConnectionRefusedError, OSError):
+                        pass
+                time.sleep(0.2)
+        except Exception:
+            pass
+
+    return False
+
+db_host = env('DB_HOST', default='localhost')
+db_port = env('DB_PORT', default='5432')
+postgres_url = env('DATABASE_URL', default='')
+
+if postgres_url and _is_postgres_available(db_host, db_port):
+    DATABASES = {
+        'default': env.db('DATABASE_URL')
+    }
+elif (env('DB_ENGINE', default='').endswith('postgresql') or env('DB_ENGINE', default='').endswith('psycopg2')) and _is_postgres_available(db_host, db_port):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env('DB_NAME', default='igadget_db'),
+            'USER': env('DB_USER', default='postgres'),
+            'PASSWORD': env('DB_PASSWORD', default='postgres'),
+            'HOST': db_host,
+            'PORT': db_port,
+        }
+    }
+else:
+    if postgres_url or env('DB_ENGINE', default=''):
+        print("[NOTICE] PostgreSQL server is not reachable on port 5432. Falling back to local SQLite database.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
