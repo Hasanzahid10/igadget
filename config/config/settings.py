@@ -23,19 +23,33 @@ DEBUG = env('DEBUG')
 # Set domain access rules
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
-# CORS Configuration (Updated for dev ports 5173-5176)
+# CORS & CSRF Configuration
 CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+    'https://igadgets.online',
+    'https://www.igadgets.online',
+    'https://admin.igadgets.online',
+    'https://api.igadgets.online',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+])
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Cloudinary Storage Apps (Must precede django.contrib.staticfiles)
+    'cloudinary_storage',
+    'django.contrib.staticfiles',
+    'cloudinary',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
 
     # Third-party apps
     'corsheaders',
@@ -149,12 +163,13 @@ def _is_postgres_available(host='localhost', port=5432):
 db_host = env('DB_HOST', default='localhost')
 db_port = env('DB_PORT', default='5432')
 postgres_url = env('DATABASE_URL', default='')
+force_postgres = env.bool('FORCE_POSTGRES', default=not DEBUG)
 
-if postgres_url and _is_postgres_available(db_host, db_port):
+if postgres_url:
     DATABASES = {
         'default': env.db('DATABASE_URL')
     }
-elif (env('DB_ENGINE', default='').endswith('postgresql') or env('DB_ENGINE', default='').endswith('psycopg2')) and _is_postgres_available(db_host, db_port):
+elif force_postgres or (env('DB_ENGINE', default='').endswith('postgresql') and _is_postgres_available(db_host, db_port)):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -166,8 +181,9 @@ elif (env('DB_ENGINE', default='').endswith('postgresql') or env('DB_ENGINE', de
         }
     }
 else:
-    if postgres_url or env('DB_ENGINE', default=''):
-        print("[NOTICE] PostgreSQL server is not reachable on port 5432. Falling back to local SQLite database.")
+    if not DEBUG:
+        raise RuntimeError("PostgreSQL database is required in Production mode (DEBUG=False). Please set DATABASE_URL or DB_NAME/DB_USER/DB_PASSWORD.")
+    print("[NOTICE] PostgreSQL server is not reachable on port 5432. Falling back to local SQLite database for development.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -200,6 +216,17 @@ if os.path.exists(local_static):
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cloudinary Media Storage Configuration (Active ONLY in Live/Production mode)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': env('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
+}
+
+use_cloudinary = env.bool('USE_CLOUDINARY', default=not DEBUG)
+if use_cloudinary and env('CLOUDINARY_CLOUD_NAME', default=''):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
