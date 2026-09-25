@@ -11,48 +11,40 @@ import time
 def ensure_postgres_running(host='localhost', port=5432):
     """Ensure local PostgreSQL server is running and fully ready before executing Django commands."""
     try:
-        import psycopg2
-        conn = psycopg2.connect('host=127.0.0.1 port=5432 dbname=postgres user=postgres password=postgres connect_timeout=1')
-        conn.close()
-        return True
-    except Exception:
+        with socket.create_connection((host, int(port)), timeout=0.5):
+            return True
+    except (socket.timeout, ConnectionRefusedError, OSError):
         pass
 
-    print("\n[INFO] PostgreSQL service is not active on port 5432. Starting PostgreSQL server...")
-    
-    data_dir = r"C:\my_install\pgsql\data"
-    postgres_bin = r"C:\my_install\pgsql\bin\postgres.exe"
-    pg_ctl_bin = r"C:\my_install\pgsql\bin\pg_ctl.exe"
+    # Only run Windows local postgres startup helper on Windows OS
+    if os.name == 'nt':
+        data_dir = r"C:\my_install\pgsql\data"
+        postgres_bin = r"C:\my_install\pgsql\bin\postgres.exe"
+        pg_ctl_bin = r"C:\my_install\pgsql\bin\pg_ctl.exe"
 
-    if not os.path.exists(data_dir):
-        print("[WARNING] PostgreSQL data directory not found.\n")
-        return False
+        if not os.path.exists(data_dir):
+            return False
 
-    pid_file = os.path.join(data_dir, 'postmaster.pid')
-    status_res = subprocess.run([pg_ctl_bin, 'status', '-D', data_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if status_res.returncode != 0 and os.path.exists(pid_file):
-        try:
-            os.remove(pid_file)
-            print("[INFO] Removed stale postmaster.pid file.")
-        except Exception:
-            pass
+        pid_file = os.path.join(data_dir, 'postmaster.pid')
+        status_res = subprocess.run([pg_ctl_bin, 'status', '-D', data_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if status_res.returncode != 0 and os.path.exists(pid_file):
+            try:
+                os.remove(pid_file)
+            except Exception:
+                pass
 
-    if os.path.exists(postgres_bin):
-        try:
-            subprocess.Popen([postgres_bin, "-D", data_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            for _ in range(25):
-                try:
-                    import psycopg2
-                    conn = psycopg2.connect('host=127.0.0.1 port=5432 dbname=postgres user=postgres password=postgres connect_timeout=1')
-                    conn.close()
-                    print("[SUCCESS] PostgreSQL server started and ready.\n")
-                    return True
-                except Exception:
-                    time.sleep(0.3)
-        except Exception:
-            pass
+        if os.path.exists(postgres_bin):
+            try:
+                subprocess.Popen([postgres_bin, "-D", data_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                for _ in range(15):
+                    try:
+                        with socket.create_connection((host, int(port)), timeout=0.3):
+                            return True
+                    except Exception:
+                        time.sleep(0.2)
+            except Exception:
+                pass
 
-    print("[WARNING] Could not start PostgreSQL automatically.\n")
     return False
 
 def main():
