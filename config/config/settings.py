@@ -217,14 +217,15 @@ if os.path.exists(local_static):
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Cloudinary Media Storage Configuration (Active ONLY in Live/Production mode)
+# Cloudinary Media Storage Configuration
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default=''),
     'API_KEY': env('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
+    'PREFIX': 'i_gadgets',
 }
 
-use_cloudinary = env.bool('USE_CLOUDINARY', default=not DEBUG)
+use_cloudinary = env.bool('USE_CLOUDINARY', default=bool(env('CLOUDINARY_CLOUD_NAME', default='')))
 if use_cloudinary and env('CLOUDINARY_CLOUD_NAME', default=''):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
