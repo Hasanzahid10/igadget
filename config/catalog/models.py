@@ -9,7 +9,7 @@ from django.utils.text import slugify
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
     image = models.TextField(blank=True, null=True)
     image_file = models.ImageField(upload_to='i_gadgets/categories/', blank=True, null=True)
@@ -22,7 +22,7 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.name)[:200]
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -34,14 +34,14 @@ class Category(models.Model):
 #================================================
 class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
     logo = models.URLField(blank=True, null=True)
     logo_file = models.ImageField(upload_to='i_gadgets/brands/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.name)[:200]
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -55,7 +55,7 @@ class Brand(models.Model):
 class Products(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -76,11 +76,11 @@ class Products(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.title) or 'product'
+            base_slug = (slugify(self.title) or 'product')[:200]
             slug = base_slug
             counter = 1
             while Products.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base_slug}-{counter}"
+                slug = f"{base_slug[:190]}-{counter}"
                 counter += 1
             self.slug = slug
         # Calculate discount percentage 

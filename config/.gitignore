@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+*.sqlite3
+db.sqlite3
+seed_mock_data.py
+media/
+.vscode/
+.idea/
