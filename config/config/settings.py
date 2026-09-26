@@ -224,11 +224,20 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
     'PREFIX': 'i_gadgets',
     'FOLDER': 'i_gadgets',
+    'SECURE': True,
 }
 
 use_cloudinary = env.bool('USE_CLOUDINARY', default=bool(env('CLOUDINARY_CLOUD_NAME', default='')))
 if use_cloudinary and env('CLOUDINARY_CLOUD_NAME', default=''):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
