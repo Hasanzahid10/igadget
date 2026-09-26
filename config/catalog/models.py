@@ -12,6 +12,7 @@ class Category(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
     image = models.TextField(blank=True, null=True)
+    image_file = models.ImageField(upload_to='i_gadgets/categories/', blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True, null=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
     is_active = models.BooleanField(default=True)
@@ -35,6 +36,7 @@ class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(unique=True, blank=True)
     logo = models.URLField(blank=True, null=True)
+    logo_file = models.ImageField(upload_to='i_gadgets/brands/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
@@ -101,6 +103,7 @@ class ProductsImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='images')
     images = models.TextField(null=True, blank=True)
+    image_file = models.ImageField(upload_to='i_gadgets/products/', blank=True, null=True)
     is_primary = models.BooleanField(default=False)
 
     def __str__(self):

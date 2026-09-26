@@ -3,7 +3,8 @@ from django.db import models
 class Banner(models.Model):
     title = models.CharField(max_length=255)
     subtitle = models.CharField(max_length=500, blank=True, null=True)
-    image_url = models.URLField(max_length=500)
+    image_url = models.URLField(max_length=500, blank=True, null=True)
+    image_file = models.ImageField(upload_to='i_gadgets/banners/', blank=True, null=True)
     primary_button_text = models.CharField(max_length=100, blank=True, null=True)
     primary_button_link = models.CharField(max_length=255, blank=True, null=True)
     secondary_button_text = models.CharField(max_length=100, blank=True, null=True)
