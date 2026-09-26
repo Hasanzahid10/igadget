@@ -215,8 +215,17 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = UserProfileSerializer(user, data=request.data, partial=partial, context={'request': request})
             serializer.is_valid(raise_exception=True)
             updated_user = serializer.save()
-            response_serializer = UserProfileSerializer(updated_user, context={'request': request})
-            return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+            tokens = get_token(updated_user)
+            user_data = UserProfileSerializer(updated_user, context={'request': request}).data
+
+            return Response({
+                "message": "User profile updated successfully.",
+                "user": user_data,
+                "access": tokens['access'],
+                "refresh": tokens['refresh'],
+                "access_token_type": tokens['access_token_type']
+            }, status=status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
             user.delete()

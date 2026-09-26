@@ -265,19 +265,33 @@ class AddressSerializer(serializers.ModelSerializer):
 # =======================================================
 class UserProfileSerializer(serializers.ModelSerializer):
     address = AddressSerializer(source="user_addresses", many=True, read_only=True)
+    password = serializers.CharField(write_only=True, required=False, min_length=6, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ('id', 'name', 'email', 'phone', 'role', 'created_at', 'address')
-        read_only_fields = ('id', 'email', 'role', 'created_at', 'address')
+        fields = ('id', 'name', 'email', 'phone', 'role', 'password', 'created_at', 'address')
+        read_only_fields = ('id', 'role', 'created_at', 'address')
+
+    def validate_email(self, value):
+        user = self.instance
+        if value and user and User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("A user with this email address already exists.")
+        return value
 
     def update(self, instance, validated_data):
         address_data = validated_data.pop('address', None)
         if address_data is None:
             address_data = validated_data.pop('user_addresses', None)
 
+        password = validated_data.pop('password', None)
+
         instance.name = validated_data.get('name', instance.name)
+        instance.email = validated_data.get('email', instance.email)
         instance.phone = validated_data.get('phone', instance.phone)
+
+        if password and password.strip():
+            instance.set_password(password.strip())
+
         instance.save()
 
         if address_data is not None:
