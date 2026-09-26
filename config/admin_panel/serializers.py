@@ -284,10 +284,18 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 
 class AdminOrderItemSerializer(serializers.ModelSerializer):
     product_title = serializers.CharField(source='product.title', read_only=True)
+    product_image = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ('id', 'product', 'product_title', 'unit_price', 'quantity', 'subtotal')
+        fields = ('id', 'product', 'product_title', 'product_image', 'unit_price', 'quantity', 'subtotal', 'selected_color', 'selected_storage')
+
+    def get_product_image(self, obj):
+        if obj.product:
+            first_img = obj.product.images.filter(is_primary=True).first() or obj.product.images.first()
+            if first_img:
+                return first_img.images
+        return ''
 
 
 class AdminOrderSerializer(serializers.ModelSerializer):

@@ -31,10 +31,16 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Order.objects.filter(user=self.request.user).prefetch_related('items__product').order_by('-created_at')
         return Order.objects.none()
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    @action(detail=False, methods=['get', 'post', 'put', 'patch'], permission_classes=[permissions.AllowAny])
     def delivery_settings(self, request):
-        """Returns the admin-configured delivery fees and settings."""
+        """Returns or updates the admin-configured delivery fees and settings."""
         settings_obj = DeliverySetting.get_settings()
+        if request.method in ['POST', 'PUT', 'PATCH']:
+            serializer = DeliverySettingSerializer(settings_obj, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer = DeliverySettingSerializer(settings_obj)
         return Response(serializer.data)
 
@@ -164,6 +170,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                         OrderItem(
                             order=order,
                             product=product,
+                            selected_color=str(it.get('selectedColor') or it.get('selected_color') or 'Standard'),
+                            selected_storage=str(it.get('selectedStorage') or it.get('selected_storage') or 'Standard'),
                             unit_price=unit_price,
                             quantity=qty
                         )
