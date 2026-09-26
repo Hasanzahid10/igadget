@@ -223,6 +223,7 @@ CLOUDINARY_STORAGE = {
     'API_KEY': env('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
     'PREFIX': 'i_gadgets',
+    'FOLDER': 'i_gadgets',
 }
 
 use_cloudinary = env.bool('USE_CLOUDINARY', default=bool(env('CLOUDINARY_CLOUD_NAME', default='')))
