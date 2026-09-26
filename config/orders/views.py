@@ -177,14 +177,12 @@ class OrderViewSet(viewsets.ModelViewSet):
             if order_items_to_create:
                 OrderItem.objects.bulk_create(order_items_to_create)
 
-            # Determine Shipping Fee
+            # Determine Shipping Fee based on admin delivery settings
             provided_shipping_fee = data.get('shipping_fee')
             if provided_shipping_fee is not None:
                 shipping_fee = float(provided_shipping_fee)
             else:
-                if d_settings.free_shipping_threshold > 0 and subtotal >= float(d_settings.free_shipping_threshold):
-                    shipping_fee = 0.0
-                elif delivery_zone == 'outside_dhaka':
+                if delivery_zone == 'outside_dhaka':
                     shipping_fee = float(d_settings.outside_dhaka_fee)
                 else:
                     shipping_fee = float(d_settings.inside_dhaka_fee)

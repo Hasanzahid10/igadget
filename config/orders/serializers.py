@@ -6,7 +6,7 @@ from catalog.serializers import ProductListSerializer
 class DeliverySettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliverySetting
-        fields = ('id', 'inside_dhaka_fee', 'outside_dhaka_fee', 'free_shipping_threshold', 'updated_at')
+        fields = ('id', 'inside_dhaka_fee', 'outside_dhaka_fee', 'updated_at')
 
 
 class OrderItemSerializer(serializers.ModelSerializer):

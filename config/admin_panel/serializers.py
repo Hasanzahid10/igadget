@@ -293,18 +293,65 @@ class AdminOrderItemSerializer(serializers.ModelSerializer):
 class AdminOrderSerializer(serializers.ModelSerializer):
     items = AdminOrderItemSerializer(many=True, read_only=True)
     customer_email = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+    customer_phone = serializers.SerializerMethodField()
+    is_guest = serializers.BooleanField(read_only=True)
+    buyer_type = serializers.SerializerMethodField()
+    customer_past_orders_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = (
-            'id', 'order_number', 'customer_email', 'phone_number',
-            'total_amount', 'shipping_fee', 'status', 'payment_status',
+            'id', 'order_number', 'tracking_token', 'user', 'is_guest', 'buyer_type',
+            'customer_name', 'customer_email', 'customer_phone', 'customer_past_orders_count',
+            'total_amount', 'shipping_fee', 'delivery_zone', 'status', 'payment_status',
             'shipping_address', 'created_at', 'items'
         )
 
+    def get_is_guest(self, obj):
+        return obj.user is None
+
+    def get_buyer_type(self, obj):
+        return 'guest' if obj.user is None else 'registered'
+
+    def get_customer_name(self, obj):
+        if obj.customer_name:
+            return obj.customer_name
+        if obj.user and getattr(obj.user, 'name', None):
+            return obj.user.name
+        if isinstance(obj.shipping_address, dict):
+            return obj.shipping_address.get('name') or obj.shipping_address.get('fullName') or 'Guest'
+        return 'Guest'
+
     def get_customer_email(self, obj):
+        if obj.customer_email:
+            return obj.customer_email
         if obj.user and getattr(obj.user, 'email', None):
             return obj.user.email
         if isinstance(obj.shipping_address, dict):
-            return obj.shipping_address.get('email') or obj.shipping_address.get('name') or obj.shipping_address.get('fullName') or ''
+            return obj.shipping_address.get('email') or ''
         return ''
+
+    def get_customer_phone(self, obj):
+        if obj.customer_phone:
+            return obj.customer_phone
+        if obj.user and getattr(obj.user, 'phone', None):
+            return obj.user.phone
+        if isinstance(obj.shipping_address, dict):
+            return obj.shipping_address.get('phone') or ''
+        return ''
+
+    def get_customer_past_orders_count(self, obj):
+        """Calculates past order count by user OR matching phone/email to identify repeat customers."""
+        if obj.user:
+            return Order.objects.filter(user=obj.user).count()
+        phone = obj.customer_phone or ''
+        email = obj.customer_email or ''
+        if phone or email:
+            query = Order.objects.none()
+            if phone:
+                query = query | Order.objects.filter(customer_phone=phone)
+            if email:
+                query = query | Order.objects.filter(customer_email=email)
+            return query.distinct().count()
+        return 1

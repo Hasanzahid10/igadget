@@ -55,14 +55,14 @@ class AdminProductImageViewSet(viewsets.ModelViewSet):
 
 
 class AdminOrderViewSet(viewsets.ReadOnlyModelViewSet):
-    """View order lists, review customer phone numbers, and confirm orders after call verification."""
+    """View order lists, review customer phone numbers, confirm orders, and manage guest/registered orders."""
     queryset = Order.objects.all().prefetch_related('items__product', 'user').order_by('-created_at')
     serializer_class = AdminOrderSerializer
     permission_classes = [IsAdminUserRole]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filter_class = OrderFilter
-    search_fields = ['order_number', 'phone_number', 'user__email']
-    ordering_fields = ['created_at','total_amount']
+    filterset_class = OrderFilter
+    search_fields = ['order_number', 'customer_name', 'customer_email', 'customer_phone', 'user__email', 'user__name', 'tracking_token']
+    ordering_fields = ['created_at', 'total_amount']
 
     @action(detail=True, methods=['post'])
     def confirm_by_call(self, request, pk=None):
@@ -90,4 +90,23 @@ class AdminOrderViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({
             "message": f"Order status updated to {new_status}.",
             "status": order.status
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def link_to_user(self, request, pk=None):
+        """Admin action to link a guest order to a user account."""
+        order = self.get_object()
+        user_id = request.data.get('user_id')
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        user_obj = User.objects.filter(id=user_id).first()
+        if not user_obj:
+            return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        order.user = user_obj
+        order.save()
+        return Response({
+            "message": f"Order {order.order_number} successfully linked to user {user_obj.email}.",
+            "user_id": user_obj.id
         }, status=status.HTTP_200_OK)

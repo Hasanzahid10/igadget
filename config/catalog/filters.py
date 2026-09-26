@@ -27,12 +27,20 @@ class ProductFilter(django_filters.FilterSet):
 
 
 class OrderFilter(django_filters.FilterSet):
-    status = django_filters.CharFilter(field_name='status',lookup_expr='exact')
-    payment_status = django_filters.CharFilter(field_name='payment_status',lookup_expr='exact')
-    phone= django_filters.CharFilter(field_name='phone',lookup_expr='icontains')
-    created_at = django_filters.DateFilter(field_name='crated_at',lookup_expr='gte')
-    created_by = django_filters.CharFilter(field_name='crated_by',lookup_expr='lte')
+    status = django_filters.CharFilter(field_name='status', lookup_expr='exact')
+    payment_status = django_filters.CharFilter(field_name='payment_status', lookup_expr='exact')
+    delivery_zone = django_filters.CharFilter(field_name='delivery_zone', lookup_expr='exact')
+    phone = django_filters.CharFilter(field_name='customer_phone', lookup_expr='icontains')
+    buyer_type = django_filters.CharFilter(method='filter_buyer_type')
+    created_at = django_filters.DateFilter(field_name='created_at', lookup_expr='gte')
 
     class Meta:
-        model= Order
-        fields = ['status','payment_status','phone']
+        model = Order
+        fields = ['status', 'payment_status', 'delivery_zone', 'phone', 'buyer_type', 'created_at']
+
+    def filter_buyer_type(self, queryset, name, value):
+        if value == 'guest':
+            return queryset.filter(user__isnull=True)
+        if value == 'registered':
+            return queryset.filter(user__isnull=False)
+        return queryset

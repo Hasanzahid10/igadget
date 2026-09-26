@@ -9,7 +9,6 @@ User = get_user_model()
 class DeliverySetting(models.Model):
     inside_dhaka_fee = models.DecimalField(max_digits=10, decimal_places=2, default=70.00, help_text="Delivery fee inside Dhaka (BDT)")
     outside_dhaka_fee = models.DecimalField(max_digits=10, decimal_places=2, default=130.00, help_text="Delivery fee outside Dhaka (BDT)")
-    free_shipping_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=5000.00, help_text="Order amount threshold for free shipping (0 to disable)")
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -21,8 +20,7 @@ class DeliverySetting(models.Model):
     def get_settings(cls):
         setting, _ = cls.objects.get_or_create(id=1, defaults={
             'inside_dhaka_fee': 70.00,
-            'outside_dhaka_fee': 130.00,
-            'free_shipping_threshold': 5000.00
+            'outside_dhaka_fee': 130.00
         })
         return setting
 

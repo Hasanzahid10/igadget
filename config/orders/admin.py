@@ -5,8 +5,8 @@ from .models import Order, OrderItem, DeliverySetting
 
 @admin.register(DeliverySetting)
 class DeliverySettingAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'inside_dhaka_fee', 'outside_dhaka_fee', 'free_shipping_threshold', 'updated_at')
-    fields = ('inside_dhaka_fee', 'outside_dhaka_fee', 'free_shipping_threshold')
+    list_display = ('__str__', 'inside_dhaka_fee', 'outside_dhaka_fee', 'updated_at')
+    fields = ('inside_dhaka_fee', 'outside_dhaka_fee')
 
     def has_add_permission(self, request):
         # Prevent creating multiple instances if 1 already exists
